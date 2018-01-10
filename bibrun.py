@@ -13,6 +13,7 @@ import requests
 import xlsxwriter
 import collections
 import csv
+from difflib import SequenceMatcher
 
 def main():
     # Header fields for Pubs worksheet
@@ -45,6 +46,9 @@ def main():
     pubs = iCite.json()["data"]
     for key in sorted(pubs[0].keys()):
         pubsHeader.add(key)
+    pubsHeader.add("JIF")
+    pubsHeader.add("JIF Percentile")
+    pubsHeader.add("JIF Quartile")
 
     # Create variable to hold summary data
     sumData = []
@@ -107,7 +111,48 @@ def main():
         except:
             journal["JIFPercent"] = float(0)
 
-            
+    # Compare each pub against JIF info
+    listofjournals = [journal["JCR Title"].replace("-", " ") for journal in jifRanks]
+    listofnames = [journal["Full Title"] for journal in jifRanks]
+    pairs = {"AMYOTROPH LATERAL SCLER FRONTOTEMPORAL DEGENER": "AMYOTROPH LAT SCL FR",
+        "FRONT NEUROSCI": "FRONT NEUROSCI SWITZ"}
+    for pub in pubs:
+        pub["journal"] = pub["journal"].upper()
+        pub["journal"] = pub["journal"].replace(".", "")
+        if pub["journal"] in pairs.keys():
+                pub["JIF"] = jifRanks[listofjournals.index(pairs[pub["journal"]])]["JIF"]
+                pub["JIF Percentile"] = jifRanks[listofjournals.index(pairs[pub["journal"]])]["JIFPercent"]
+                continue
+        elif pub["journal"] in listofjournals:
+            pub["JIF"] = jifRanks[listofjournals.index(pub["journal"])]["JIF"]
+            pub["JIF Percentile"] = jifRanks[listofjournals.index(pub["journal"])]["JIFPercent"]
+            pairs[pub["journal"]] = pub["journal"]
+        else:
+            pub["JIF"] = 0
+            pub["JIF Percentile"] = 0
+            simJournals = {}
+            for name in listofjournals:
+                if similar(pub["journal"], name) >= 0.7 and pub["journal"][0] == name[0]:
+                    simJournals[similar(pub["journal"], name)] = name
+            countSim = 0
+            for simJ in reversed(sorted(simJournals.keys())):
+                if countSim >= 3:
+                    break
+                userJudge = input("Is {} the journal {}? Enter y/n: ".format(pub["journal"],
+                    jifRanks[listofjournals.index(simJournals[simJ])]["Full Title"]))
+                if userJudge == 'y':
+                    pub["JIF"] = jifRanks[listofjournals.index(simJournals[simJ])]["JIF"]
+                    pub["JIF Percentile"] = jifRanks[listofjournals.index(simJournals[simJ])]["JIFPercent"]
+                    pairs[pub["journal"]] = simJournals[simJ]
+                    break
+                else:
+                    countSim += 1
+                    continue
+
+
+
+
+    print("Journal Impact Factor Information Added.")
 
     #Write NCAN Data.xlsx, start with pubData
     workbook = xlsxwriter.Workbook('NCAN Data.xlsx')
@@ -152,7 +197,8 @@ def main():
     workbook.close()
     print("NCAN Bibliometric Assessment complete. View NCAN Data.xlsx for data")
 
-
+def similar(str1, str2):
+    return SequenceMatcher(None, str1, str2).ratio()
 
 # Run the program!
 if __name__ == "__main__":
