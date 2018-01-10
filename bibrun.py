@@ -12,6 +12,7 @@ import sys
 import requests
 import xlsxwriter
 import collections
+import csv
 
 def main():
     # Header fields for Pubs worksheet
@@ -85,6 +86,29 @@ def main():
             if pub["year"] == year["Year"] and pub['nih_percentile'] is not None:
                 year['Average NIH Percentile'] += pub['nih_percentile']/year['Count']
 
+    #Import Thompson-Reuters JIF Information
+    jifHeader = ["Rank", "Full Title", "JCR Title", "JIF", "JIFPercent"]
+    jifRanks = []
+    with open('JournalHomeGrid.csv', 'r') as jifFile:
+        jifRankings = csv.DictReader(jifFile, fieldnames=jifHeader)
+        jifRanks = list(jifRankings)
+    jifRanks = [journal for journal in jifRanks if journal["Rank"].isnumeric()]
+    for journal in jifRanks:
+        try:
+            journal["Rank"] = int(journal["Rank"])
+        except:
+            jifRanks.remove(journal)
+        try:
+            journal["JIF"] = float(journal["JIF"])
+        except:
+            journal["JIF"] = float(0)
+        try:
+            journal["JIFPercent"] = float(journal["JIFPercent"])
+        except:
+            journal["JIFPercent"] = float(0)
+
+            
+
     #Write NCAN Data.xlsx, start with pubData
     workbook = xlsxwriter.Workbook('NCAN Data.xlsx')
     bold = workbook.add_format({'bold': True})
@@ -126,6 +150,7 @@ def main():
         row += 1
 
     workbook.close()
+    print("NCAN Bibliometric Assessment complete. View NCAN Data.xlsx for data")
 
 
 
