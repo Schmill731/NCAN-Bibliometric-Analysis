@@ -40,6 +40,8 @@ def main():
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
     pubMedURL = pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000")
     pubMedInfo = requests.get(pubMedURL)
+
+    #Determine whether PubMed ID Search was Successful
     if pubMedInfo.status_code == 200:
         tree = ElementTree.fromstring(pubMedInfo.content)
         print(tree.find('Count').text + " PubMed IDs obtained.")
@@ -74,12 +76,16 @@ def main():
     #Classify each publication according to its TR&D based on keywords or input
     for pub in pubs:
         pub["title"] = pub["title"].lower()
+
+        #TR&D 1 Classifiers
         if "spinal cord injury" in pub["title"] or \
             "plasticity" in pub["title"] or \
             "h-reflex" in pub["title"] or \
             "operant conditioning" in pub["title"] or \
             "rats" in pub["title"]:
                 pub["TR&D"] = 1
+
+        #TR&D 2 Classifiers
         elif "brain" in pub["title"] and \
             "computer" in pub["title"] and \
             "interface" in pub["title"] or \
@@ -87,6 +93,8 @@ def main():
             "eeg" in pub["title"] or \
             "p300" in pub["title"]:
                 pub["TR&D"] = 2
+
+        #TR&D 3 Classifiers
         elif "cortical" in pub["title"] or \
             "electrocorticography" in pub["title"] or \
             "ecog" in pub["title"] or \
@@ -94,6 +102,8 @@ def main():
             "electrocorticographic" in pub["title"] or \
             "neural" in pub["title"]:
                 pub["TR&D"] = 3
+
+        #Ask for manual classification
         else:
             while True:
                 trd = input('Under which TR&D does "{}" fall (1/2/3/c/n)? '.format(pub["title"]))
@@ -105,9 +115,9 @@ def main():
                         pub["TR&D"] = trd
                         break
 
-    # Create variable to hold summary data
+    # Create variables to holder summary statistics and header info
     sumData = []
-    sumInfo = ["TR&D", "Year", "Count", "Weighted RCR", "Mean RCR",
+    sumHeaderNames = ["TR&D", "Year", "Count", "Weighted RCR", "Mean RCR",
         "Average NIH Percentile", "Num in JIF Q1", "Percent in JIF Q1", 
         "Average JIF Quartile", "Average JIF", "Sum JIF",
         "Average JIF Percentile", "Social Media Account Shares",
@@ -115,7 +125,7 @@ def main():
         "Peer Review Site Posts", "Total Social Media Posts", "QNA Posts",
         "Reddit Posts", "Tweets", "Wikiepedia", "Unique Authors", "New Authors"]
     sumHeader = collections.OrderedDict()
-    for info in sumInfo:
+    for info in sumHeaderNames:
         sumHeader[info] = None
     for trd in [1, 2, 3, "Total"]:
         for yr in [2013, 2014, 2015, 2016, 2017]:
@@ -130,44 +140,42 @@ def main():
                 "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0,
                 "Unique Authors": 0, "New Authors": 0, "authors": []})
 
-    # Determine number of unique authors and new authors
+    # Create variables and flags to signify unique and new authors
     newAuthors = {}
     for trd in [1, 2, 3, "Total"]:
         for yr in [2013, 2014, 2015, 2016, 2017]:
             newAuthors[(trd, yr)] = []
     same = False
     new = True
-    for year in sumData:
+    for sumStat in sumData:
         for pub in pubs:
-            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
-                year["TR&D"] == "Total"):
-                authors = pub["authors"].split(", ")
-                for pubAuthor in authors:
-                    for yearAuthor in year["authors"]:
-                        if pubAuthor.split(" ")[-1] == yearAuthor.split(" ")[-1] and \
-                        pubAuthor[0] == yearAuthor[0]:
-                            same = True
-                    if not same:
-                        year["authors"].append(pubAuthor)
-                    same = False
-            if (pub["TR&D"] == year["TR&D"] or year["TR&D"] == 'Total') and \
-                pub["year"] <= year["Year"]:
-                authors = pub["authors"].split(", ")
-                for pubAuthor in authors:
-                    for newAuthor in newAuthors[(year["TR&D"], year["Year"])]:
-                        if pubAuthor.split(" ")[-1] == newAuthor.split(" ")[-1] and \
-                        pubAuthor[0] == newAuthor[0]:
-                            new = False
-                    if new:
-                        newAuthors[(year["TR&D"], year["Year"])].append(pubAuthor)
-                    new = True
-        if year["Year"] > 2013:
-            for past in range(2013, year["Year"]):
-                for pastAuthor in newAuthors[(year["TR&D"], past)]:
-                    if pastAuthor in newAuthors[(year["TR&D"], year["Year"])]:
-                        newAuthors[(year["TR&D"], year["Year"])].remove(pastAuthor)
-            year["New Authors"] = len(newAuthors[(year["TR&D"], year["Year"])])
-        year["Unique Authors"] = len(year["authors"])
+            authors = pub["authors"].split(", ")
+
+            # Determine whether it's a unique author
+            if pub["year"] == sumStat["Year"] and \
+                (pub["TR&D"] == sumStat["TR&D"] or \
+                sumStat["TR&D"] == "Total"):
+                    sumStat["authors"] += [pubAuthor for pubAuthor in authors if not sameAuthor(pubAuthor, sumStat["authors"])]
+
+            # Create a list of all authors for each summary category
+            if (pub["TR&D"] == sumStat["TR&D"] or \
+                sumStat["TR&D"] == 'Total') and \
+                pub["year"] <= sumStat["Year"]:
+                    for pubAuthor in authors:
+                        for newAuthor in newAuthors[(sumStat["TR&D"], sumStat["Year"])]:
+                            if pubAuthor.split(" ")[-1] == newAuthor.split(" ")[-1] and \
+                            pubAuthor[0] == newAuthor[0]:
+                                new = False
+                        if new:
+                            newAuthors[(sumStat["TR&D"], sumStat["Year"])].append(pubAuthor)
+                        new = True
+        if sumStat["Year"] > 2013:
+            for past in range(2013, sumStat["Year"]):
+                for pastAuthor in newAuthors[(sumStat["TR&D"], past)]:
+                    if pastAuthor in newAuthors[(sumStat["TR&D"], sumStat["Year"])]:
+                        newAuthors[(sumStat["TR&D"], sumStat["Year"])].remove(pastAuthor)
+            sumStat["New Authors"] = len(newAuthors[(sumStat["TR&D"], sumStat["Year"])])
+        sumStat["Unique Authors"] = len(sumStat["authors"])
     
     #Determine number of publications per year
     for year in sumData:
@@ -392,6 +400,14 @@ def main():
 
 def similar(str1, str2):
     return SequenceMatcher(None, str1, str2).ratio()
+
+def sameAuthor(author, lst):
+    same = False
+    for elt in lst:
+        if author.split(" ")[-1] == elt.split(" ")[-1] and \
+            author[0] == elt[0]:
+                same = True
+    return same
 
 # Run the program!
 if __name__ == "__main__":
