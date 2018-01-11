@@ -14,22 +14,41 @@ import xlsxwriter
 import collections
 import csv
 from difflib import SequenceMatcher
+from xml.etree import ElementTree
 
 def main():
     # Header fields for Pubs worksheet
     pubsHeader = set()
     pubsHeader.add("TR&D")
 
-    # Load in list of PMIDs
-    if len(sys.argv) == 2:
-        pmidFile = sys.argv[1]
+    #Search PubMed for IDs
+    pmidList = []
+    pubMedInfo = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db" +
+        "=pubmed&term=P41%20EB018783/EB/NIBIB%20NIH%20HHS/United%20States" +
+        "%5BGrant%20Number%5D%20OR%20%28%28%28%28%28%28%222013%22%5BPDAT%" +
+        "5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Schalk%2C%20Gerwin%5B" +
+        "Full%20Author%20Name%5D%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%2" +
+        "0%223000%22%5BPDAT%5D%29%20AND%20Wolpaw%2C%20Jonathan%5BFull%20Aut" +
+        "hor%20Name%5D%29%29%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%20%2230" +
+        "00%22%5BPDAT%5D%29%20AND%20Brunner%2C%20Peter%5BFull%20Author%20Na" +
+        "me%5D%29%29%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%20%223000%22%5" +
+        "BPDAT%5D%29%20AND%20McFarland%20DJ%5BAuthor%5D%29%29%20OR%20%28%28" +
+        "%222013%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Vaugh" +
+        "an%2C%20Theresa%5BFull%20Author%20Name%5D%29%29%20OR%20%28%28%222" +
+        "013%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Heckman" +
+        "%2C%20Susan%5BFull%20Author%20Name%5D%29%29%20OR%20%28%28%22201" +
+        "3%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Carp%2C%2" +
+        "0Jonathan%5BFull%20Author%20Name%5D%29%20OR%20%28%28%222013%22%5B" +
+        "PDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20McCane%20L%5BAuthor" +
+        "%5D%29&retmax=1000")
+    if pubMedInfo.status_code == 200:
+        tree = ElementTree.fromstring(pubMedInfo.content)
+        print(tree.find('Count').text + " PubMed IDs obtained.")
+        for id in list(tree.find('IdList')):
+            pmidList.append(id.text)
     else:
-        pmidFile = 'pubmed_result.txt'
-
-    with open(pmidFile, 'r') as file:
-        pmidList = file.read().rstrip()
-
-    pmidList = pmidList.split('\n')
+        print("Error getting PMIDs.")
+        return
 
     #Search iCite for Relative Criteria Ratio
     iCite = requests.get("https://icite.od.nih.gov/api/pubs?pmids=" +
@@ -65,26 +84,52 @@ def main():
     sumHeader["Average JIF"] = None
     sumHeader["Sum JIF"] = None
     sumHeader["Average JIF Percentile"] = None
+    sumHeader["Social Media Account Shares"] = None
+    sumHeader["Facebook Posts"] = None
+    sumHeader["Blog Posts"] = None
+    sumHeader["Google Plus Posts"] = None
+    sumHeader["News Articles"] = None
+    sumHeader["Peer Review Site Posts"] = None
+    sumHeader["Total Social Media Posts"] = None
+    sumHeader["QNA Posts"] = None
+    sumHeader["Reddit Posts"] = None
+    sumHeader["Tweets"] = None
+    sumHeader["Wikipedia Mentions"] = None
     sumData.append({'Year': 2013, 'Count': 0, 'Weighted RCR': 0,
         'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
         'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0})
+        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     sumData.append({'Year': 2014, 'Count': 0, 'Weighted RCR': 0,
         'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
         'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0})
+        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     sumData.append({'Year': 2015, 'Count': 0, 'Weighted RCR': 0,
         'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
         'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0})
+        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     sumData.append({'Year': 2016, 'Count': 0, 'Weighted RCR': 0,
         'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
         'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0})
+        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     sumData.append({'Year': 2017, 'Count': 0, 'Weighted RCR': 0,
         'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
         'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0})
+        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     
     #Determine number of publications per year
     for pub in pubs:
@@ -197,6 +242,63 @@ def main():
 
 
     print("Journal Impact Factor Information Added.")
+
+    # DEBUG TEST
+    listofinfo = []
+    with open("altmetric.csv", "r") as altmetricFile:
+        altmetricData = csv.DictReader(altmetricFile)
+        listofinfo = list(altmetricData)
+
+    # #Get Altmetric Data
+    # listofinfo = []
+    # for pmid in pmidList:
+    #     response = requests.get("https://api.altmetric.com/v1/pmid/" + pmid)
+    #     if response.status_code == 200:
+    #         listofinfo.append(response.json())
+    #     elif response.status_code != 404:
+    #         print("Error getting article (may be rate-limited)")
+
+    #Add Altmetric Data
+    for info in listofinfo:
+        info["pmid"] = int(info["pmid"])
+        for pub in pubs:
+            if info["pmid"] == pub["pmid"]:
+                print("TEST")
+                for key in info.keys():
+                    if key[0:5] == "cited":
+                        if info[key].isnumeric():
+                            pub[key] = int(info[key])
+                            pubsHeader.add(key)
+
+    #Tally Altmetric Data
+    for pub in pubs:
+        for year in sumData:
+            if pub["year"] == year["Year"]:
+                for key in pub.keys():
+                    if key == "cited_by_accounts_count":
+                        year["Social Media Account Shares"] += pub["cited_by_accounts_count"]
+                    if key == "cited_by_fbwalls_count":
+                        year["Facebook Posts"] += pub["cited_by_fbwalls_count"]
+                    if key == "cited_by_feeds_count":
+                        year["Blog Posts"] += pub["cited_by_feeds_count"]
+                    if key == "cited_by_gplus_count":
+                        year["Google Plus Posts"] += pub["cited_by_gplus_count"]
+                    if key == "cited_by_msm_count":
+                        year["News Articles"] += pub["cited_by_msm_count"]
+                    if key == "cited_by_peer_review_sites_count":
+                        year["Peer Review Site Posts"] += pub["cited_by_peer_review_sites_count"]
+                    if key == "cited_by_posts_count":
+                        year["Total Social Media Posts"] += pub["cited_by_posts_count"]
+                    if key == "cited_by_qna_count":
+                        year["QNA Posts"] += pub["cited_by_qna_count"]
+                    if key == "cited_by_rdts_count":
+                        year["Reddit Posts"] += pub["cited_by_rdts_count"]
+                    if key == "cited_by_tweeters_count":
+                        year["Tweets"] += pub["cited_by_tweeters_count"]
+                    if key == "cited_by_wikipedia_count":
+                        year["Wikipedia Mentions"] += pub["cited_by_wikipedia_count"]
+
+    print("Altmetric Data Added.")
 
     #Write NCAN Data.xlsx, start with pubData
     workbook = xlsxwriter.Workbook('NCAN Data.xlsx')
