@@ -161,28 +161,25 @@ def main():
             if (pub["TR&D"] == sumStat["TR&D"] or \
                 sumStat["TR&D"] == 'Total') and \
                 pub["year"] <= sumStat["Year"]:
-                    for pubAuthor in authors:
-                        for newAuthor in newAuthors[(sumStat["TR&D"], sumStat["Year"])]:
-                            if pubAuthor.split(" ")[-1] == newAuthor.split(" ")[-1] and \
-                            pubAuthor[0] == newAuthor[0]:
-                                new = False
-                        if new:
-                            newAuthors[(sumStat["TR&D"], sumStat["Year"])].append(pubAuthor)
-                        new = True
+                    newAuthors[(sumStat["TR&D"], sumStat["Year"])] += [pubAuthor
+                        for pubAuthor in authors if not sameAuthor(pubAuthor,
+                        newAuthors[(sumStat["TR&D"], sumStat["Year"])])]
+
+        # Calculate the number of new authors and unique authors
         if sumStat["Year"] > 2013:
             for past in range(2013, sumStat["Year"]):
-                for pastAuthor in newAuthors[(sumStat["TR&D"], past)]:
-                    if pastAuthor in newAuthors[(sumStat["TR&D"], sumStat["Year"])]:
-                        newAuthors[(sumStat["TR&D"], sumStat["Year"])].remove(pastAuthor)
+                newAuthors[(sumStat["TR&D"], sumStat["Year"])] = [author
+                    for author in newAuthors[(sumStat["TR&D"], sumStat["Year"])]
+                    if author not in newAuthors[(sumStat["TR&D"], past)]]
             sumStat["New Authors"] = len(newAuthors[(sumStat["TR&D"], sumStat["Year"])])
         sumStat["Unique Authors"] = len(sumStat["authors"])
     
     #Determine number of publications per year
-    for year in sumData:
-        for pub in pubs:
-            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
-                year["TR&D"] == "Total"):
-                year["Count"] += 1
+    for sumStat in sumData:
+        sumStat["Count"] = len([pub for pub in pubs
+            if pub["year"] == sumStat["Year"] and \
+            (pub["TR&D"] == sumStat["TR&D"] or \
+            sumStat["TR&D"] == "Total")])
 
     #Determine Weighted RCR and Mean RCR
     for year in sumData:
