@@ -182,12 +182,12 @@ def main():
             sumStat["TR&D"] == "Total")])
 
     #Determine Weighted RCR and Mean RCR
-    for year in sumData:
-        for pub in pubs:
-            if pub["year"] == year["Year"] and pub['relative_citation_ratio'] is not None and \
-            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
-                year['Weighted RCR'] += pub['relative_citation_ratio']
-                year['Mean RCR'] += pub['relative_citation_ratio']/year['Count']
+    for sumStat in sumData:
+        sumStat['Weighted RCR'] = sum([pub['relative_citation_ratio']
+            for pub in pubs if pub["year"] == sumStat["Year"] and \
+            pub['relative_citation_ratio'] is not None and \
+            (pub["TR&D"] == sumStat["TR&D"] or sumStat["TR&D"] == "Total")])
+        sumStat['Mean RCR'] = sumStat['Weighted RCR']/sumStat['Count']
 
     # Determine Average NIH Percentile
     for year in sumData:
