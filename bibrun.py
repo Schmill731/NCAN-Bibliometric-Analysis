@@ -100,7 +100,7 @@ def main():
             "ecog" in pub["title"] or \
             "cortex" in pub["title"] or \
             "electrocorticographic" in pub["title"] or \
-            "neural" in pub["title"]:
+            "epilepsy" in pub["title"]:
                 pub["TR&D"] = 3
 
         #Ask for manual classification
@@ -220,29 +220,44 @@ def main():
 
     # Compare each pub against JIF info
     listofjournals = [journal["JCR Title"].replace("-", " ") for journal in jifRanks]
-    listofnames = [journal["Full Title"] for journal in jifRanks]
     pairs = {"AMYOTROPH LATERAL SCLER FRONTOTEMPORAL DEGENER": "AMYOTROPH LAT SCL FR",
-        "FRONT NEUROSCI": "FRONT NEUROSCI SWITZ", "FRONT COMPUT NEUROSCI": "FRONT COMPUT NEUROSC",
-        "J SPEECH LANG HEAR RES": "J SPEECH LANG HEAR R", "IEEE TRANS NEURAL SYST REHABIL ENG": 
-        "IEEE T NEUR SYS REH", "AM J PHYSIOL RENAL PHYSIOL": "AM J PHYSIOL RENAL", "ARCH PHYS MED REHABIL": 
-        "ARCH PHYS MED REHAB", "NEUROUROL URODYN": "NEUROUROL URODYNAM", "SCI REP": "SCI REP UK",
-        "EPILEPSY BEHAV CASE REP": "EPILEPSY BEHAV", "J NEUROSCI METHODS": "J NEUROSCI METH",
-        "PROC NATL ACAD SCI USA": "P NATL ACAD SCI USA", "REV NEUROSCI": "REV NEUROSCIENCE",
-        "J PHYSIOL (LOND)": "J PHYSIOL LONDON", "J NEUROTRAUMA": "J NEUROTRAUM"}
+        "FRONT NEUROSCI": "FRONT NEUROSCI SWITZ",
+        "FRONT COMPUT NEUROSCI": "FRONT COMPUT NEUROSC",
+        "J SPEECH LANG HEAR RES": "J SPEECH LANG HEAR R",
+        "IEEE TRANS NEURAL SYST REHABIL ENG": "IEEE T NEUR SYS REH",
+        "AM J PHYSIOL RENAL PHYSIOL": "AM J PHYSIOL RENAL",
+        "ARCH PHYS MED REHABIL": "ARCH PHYS MED REHAB",
+        "NEUROUROL URODYN": "NEUROUROL URODYNAM",
+        "SCI REP": "SCI REP UK",
+        "EPILEPSY BEHAV CASE REP": "EPILEPSY BEHAV",
+        "J NEUROSCI METHODS": "J NEUROSCI METH",
+        "PROC NATL ACAD SCI USA": "P NATL ACAD SCI USA",
+        "REV NEUROSCI": "REV NEUROSCIENCE",
+        "J PHYSIOL (LOND)": "J PHYSIOL LONDON",
+        "J NEUROTRAUMA": "J NEUROTRAUM"}
+
     for pub in pubs:
         pub["journal"] = pub["journal"].upper()
         pub["journal"] = pub["journal"].replace(".", "")
+
+        #Check if we've already paired it with JIF info
         if pub["journal"] in pairs.keys():
                 pub["JIF"] = jifRanks[listofjournals.index(pairs[pub["journal"]])]["JIF"]
                 pub["JIF Percentile"] = jifRanks[listofjournals.index(pairs[pub["journal"]])]["JIFPercent"]
                 continue
+
+        #Check if it's in the list of journals
         elif pub["journal"] in listofjournals:
             pub["JIF"] = jifRanks[listofjournals.index(pub["journal"])]["JIF"]
             pub["JIF Percentile"] = jifRanks[listofjournals.index(pub["journal"])]["JIFPercent"]
             pairs[pub["journal"]] = pub["journal"]
+
+        # See what the top 3 similar journals are and present to user
         else:
             pub["JIF"] = 0
             pub["JIF Percentile"] = 0
+            if pub["journal"] in ["FRONT INTEGR NEUROSCI", "FRONT NEUROENG"]:
+                continue
             simJournals = {}
             for name in listofjournals:
                 if similar(pub["journal"], name) >= 0.7 and pub["journal"][0] == name[0]:
@@ -251,7 +266,7 @@ def main():
             for simJ in reversed(sorted(simJournals.keys())):
                 if countSim >= 3:
                     break
-                userJudge = input("Is {} the journal {}? Enter y/n: ".format(pub["journal"],
+                userJudge = input("Is {} the journal {} (y/n)? ".format(pub["journal"],
                     jifRanks[listofjournals.index(simJournals[simJ])]["Full Title"]))
                 if userJudge == 'y':
                     pub["JIF"] = jifRanks[listofjournals.index(simJournals[simJ])]["JIF"]
@@ -274,19 +289,19 @@ def main():
             pub["JIF Quartile"] = 4
 
     # Determine JIF Metrics
-    for year in sumData:
+    for sumStat in sumData:
+        sumStat["Num in JIF Q1"] = len([pub for pub in pubs
+            if pub["year"] == sumStat["Year"] and \
+            pub["JIF Quartile"] == 1 and \
+            (pub["TR&D"] == sumStat["TR&D"] or sumStat["TR&D"] == "Total")])
+        sumStat["Percent in JIF Q1"] = sumStat["Num in JIF Q1"]/sumStat["Count"]
         for pub in pubs:
-            if pub["year"] == year["Year"] and pub["JIF Quartile"] == 1 and \
-            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
-                year["Num in JIF Q1"] += 1
             if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
                 year["TR&D"] == "Total"):
                 year["Average JIF Quartile"] += pub["JIF Quartile"]/year["Count"]
                 year["Average JIF"] += pub["JIF"]/year["Count"]
                 year["Sum JIF"] += pub["JIF"]
                 year["Average JIF Percentile"] += pub["JIF Percentile"]/year["Count"]
-    for year in sumData:
-        year["Percent in JIF Q1"] = year["Num in JIF Q1"]/year["Count"]
 
 
     print("Journal Impact Factor Information Added.")
