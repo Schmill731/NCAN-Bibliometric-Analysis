@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 
-# Runs a bibliometric assessment of the given list of PMIDs
-# Expects the filename of a .txt file of a list of PMIDs to be given
-# Runs on Python 3, will not work with Python 2
+# Bibrun.py
 #
-# Created by Billy Schmitt, williamschmitt@college.harvard.edu
+# Runs a bibliometric assessment of the given PubMed Search URL.
+# Records bibliometrics using NIH's freely accessible iCite tool,
+# Thompson-Reuters Journal Impact Factor (JIF), and Altmetrics.com.
+#
+# Created by Billy Schmitt, williamschmitt@college.harvard.edu for internal
+# use at the National Center for Adaptive Neurotechnologies
 # Last Modified 1/10/17
+#
+# Clone the GitHub Repository here: 
+# https://github.com/Schmill731/NCAN-Bibliometric-Analysis
 
-# List of imports
+
+# Import Required Packages
 import sys
 import requests
 import xlsxwriter
@@ -17,49 +24,49 @@ from difflib import SequenceMatcher
 from xml.etree import ElementTree
 
 def main():
-    # Header fields for Pubs worksheet
+    print("----------NCAN Bibliometric Assessment----------")
+    print("Usage Instructions (Requires @neurotechcenter.org account): " +
+        "https://docs.google.com/document/d/1Grehao_5cqiCKP3X8-6QblR93" +
+        "LVuFMZcNhYH4j_Agzc/edit?usp=sharing\n\n\n")
+
+    # Create header fields for Publications spreadsheet
     pubsHeader = set()
     pubsHeader.add("TR&D")
 
     #Search PubMed for IDs
     pmidList = []
-    pubMedInfo = requests.get("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db" +
-        "=pubmed&term=P41%20EB018783/EB/NIBIB%20NIH%20HHS/United%20States" +
-        "%5BGrant%20Number%5D%20OR%20%28%28%28%28%28%28%222013%22%5BPDAT%" +
-        "5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Schalk%2C%20Gerwin%5B" +
-        "Full%20Author%20Name%5D%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%2" +
-        "0%223000%22%5BPDAT%5D%29%20AND%20Wolpaw%2C%20Jonathan%5BFull%20Aut" +
-        "hor%20Name%5D%29%29%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%20%2230" +
-        "00%22%5BPDAT%5D%29%20AND%20Brunner%2C%20Peter%5BFull%20Author%20Na" +
-        "me%5D%29%29%20OR%20%28%28%222013%22%5BPDAT%5D%20%3A%20%223000%22%5" +
-        "BPDAT%5D%29%20AND%20McFarland%20DJ%5BAuthor%5D%29%29%20OR%20%28%28" +
-        "%222013%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Vaugh" +
-        "an%2C%20Theresa%5BFull%20Author%20Name%5D%29%29%20OR%20%28%28%222" +
-        "013%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Heckman" +
-        "%2C%20Susan%5BFull%20Author%20Name%5D%29%29%20OR%20%28%28%22201" +
-        "3%22%5BPDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20Carp%2C%2" +
-        "0Jonathan%5BFull%20Author%20Name%5D%29%20OR%20%28%28%222013%22%5B" +
-        "PDAT%5D%20%3A%20%223000%22%5BPDAT%5D%29%20AND%20McCane%20L%5BAuthor" +
-        "%5D%29&retmax=1000")
+    pubMedURL = input("Please copy and paste the URL from your PubMed Search: ")
+    pubMedURL = pubMedURL.replace("https://www.ncbi.nlm.nih.gov/pubmed/?",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
+    print(pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000"))
+    pubMedInfo = requests.get(pubMedURL)
     if pubMedInfo.status_code == 200:
         tree = ElementTree.fromstring(pubMedInfo.content)
         print(tree.find('Count').text + " PubMed IDs obtained.")
         for id in list(tree.find('IdList')):
             pmidList.append(id.text)
     else:
-        print("Error getting PMIDs.")
+        print("Error obtaining PMIDs.")
+        print("Response Code: " + str(pubMedInfo.status_code))
+        print("Please check that you copied and pasted the URL correctly.")
+        print("Aborting...")
         return
 
     #Search iCite for Relative Criteria Ratio
     iCite = requests.get("https://icite.od.nih.gov/api/pubs?pmids=" +
         ",".join(pmidList))
     if iCite.status_code == 200:
-        print("iCite Data Collected")
+        print("iCite data collected.")
     else:
         print("Error getting iCite information.")
         print("Response Code: " + str(iCite.status_code))
-        print("Aborting...")
-        return
+        while True:
+            cont = input("Do you wish to continue without iCite information (y/n)?")
+            if cont == "y":
+                break
+            elif cont == "n":
+                print("Aborting...")
+                return
 
     #List of publication information
     pubs = iCite.json()["data"]
