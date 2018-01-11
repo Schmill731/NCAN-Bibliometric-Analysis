@@ -59,16 +59,32 @@ def main():
     sumHeader["Weighted RCR"] = None
     sumHeader["Mean RCR"] = None
     sumHeader["Average NIH Percentile"] = None
+    sumHeader["Num in JIF Q1"] = None
+    sumHeader["Percent in JIF Q1"] = None
+    sumHeader["Average JIF Quartile"] = None
+    sumHeader["Average JIF"] = None
+    sumHeader["Sum JIF"] = None
+    sumHeader["Average JIF Percentile"] = None
     sumData.append({'Year': 2013, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0})
+        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+        'Sum JIF': 0, 'Average JIF Percentile': 0})
     sumData.append({'Year': 2014, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0})
+        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+        'Sum JIF': 0, 'Average JIF Percentile': 0})
     sumData.append({'Year': 2015, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0})
+        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+        'Sum JIF': 0, 'Average JIF Percentile': 0})
     sumData.append({'Year': 2016, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0})
+        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+        'Sum JIF': 0, 'Average JIF Percentile': 0})
     sumData.append({'Year': 2017, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0})
+        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+        'Sum JIF': 0, 'Average JIF Percentile': 0})
     
     #Determine number of publications per year
     for pub in pubs:
@@ -115,7 +131,13 @@ def main():
     listofjournals = [journal["JCR Title"].replace("-", " ") for journal in jifRanks]
     listofnames = [journal["Full Title"] for journal in jifRanks]
     pairs = {"AMYOTROPH LATERAL SCLER FRONTOTEMPORAL DEGENER": "AMYOTROPH LAT SCL FR",
-        "FRONT NEUROSCI": "FRONT NEUROSCI SWITZ"}
+        "FRONT NEUROSCI": "FRONT NEUROSCI SWITZ", "FRONT COMPUT NEUROSCI": "FRONT COMPUT NEUROSC",
+        "J SPEECH LANG HEAR RES": "J SPEECH LANG HEAR R", "IEEE TRANS NEURAL SYST REHABIL ENG": 
+        "IEEE T NEUR SYS REH", "AM J PHYSIOL RENAL PHYSIOL": "AM J PHYSIOL RENAL", "ARCH PHYS MED REHABIL": 
+        "ARCH PHYS MED REHAB", "NEUROUROL URODYN": "NEUROUROL URODYNAM", "SCI REP": "SCI REP UK",
+        "EPILEPSY BEHAV CASE REP": "EPILEPSY BEHAV", "J NEUROSCI METHODS": "J NEUROSCI METH",
+        "PROC NATL ACAD SCI USA": "P NATL ACAD SCI USA", "REV NEUROSCI": "REV NEUROSCIENCE",
+        "J PHYSIOL (LOND)": "J PHYSIOL LONDON", "J NEUROTRAUMA": "J NEUROTRAUM"}
     for pub in pubs:
         pub["journal"] = pub["journal"].upper()
         pub["journal"] = pub["journal"].replace(".", "")
@@ -149,7 +171,29 @@ def main():
                     countSim += 1
                     continue
 
+    #Determine JIF Quartiles
+    for pub in pubs:
+        if pub["JIF Percentile"] >= 75:
+            pub["JIF Quartile"] = 1
+        elif pub["JIF Percentile"] >= 50:
+            pub["JIF Quartile"] = 2
+        elif pub["JIF Percentile"] >= 25:
+            pub["JIF Quartile"] = 3
+        else:
+            pub["JIF Quartile"] = 4
 
+    # Determine JIF Metrics
+    for pub in pubs:
+            for year in sumData:
+                if pub["year"] == year["Year"] and pub["JIF Quartile"] == 1:
+                    year["Num in JIF Q1"] += 1
+                if pub["year"] == year["Year"]:
+                    year["Average JIF Quartile"] += pub["JIF Quartile"]/year["Count"]
+                    year["Average JIF"] += pub["JIF"]/year["Count"]
+                    year["Sum JIF"] += pub["JIF"]
+                    year["Average JIF Percentile"] += pub["JIF Percentile"]/year["Count"]
+    for year in sumData:
+        year["Percent in JIF Q1"] = year["Num in JIF Q1"]/year["Count"]
 
 
     print("Journal Impact Factor Information Added.")
