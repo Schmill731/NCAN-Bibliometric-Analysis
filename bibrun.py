@@ -190,11 +190,12 @@ def main():
         sumStat['Mean RCR'] = sumStat['Weighted RCR']/sumStat['Count']
 
     # Determine Average NIH Percentile
-    for year in sumData:
-        for pub in pubs:
-            if pub["year"] == year["Year"] and pub['nih_percentile'] is not None and \
-            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
-                year['Average NIH Percentile'] += pub['nih_percentile']/year['Count']
+    for sumStat in sumData:
+        sumStat['Average NIH Percentile'] = sum([pub['nih_percentile']
+            for pub in pubs if pub["year"] == sumStat["Year"] and \
+            pub['nih_percentile'] is not None and \
+            (pub["TR&D"] == sumStat["TR&D"] or \
+            sumStat["TR&D"] == "Total")])/sumStat['Count']
 
     #Import Thompson-Reuters JIF Information
     jifHeader = ["Rank", "Full Title", "JCR Title", "JIF", "JIFPercent"]
