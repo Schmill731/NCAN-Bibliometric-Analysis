@@ -69,6 +69,29 @@ def main():
     pubsHeader.add("JIF Percentile")
     pubsHeader.add("JIF Quartile")
 
+    #Ask about TR&D
+    for pub in pubs:
+        pub["title"] = pub["title"].lower()
+        if "spinal" in pub["title"] and "cord" in pub["title"] and \
+            "injury" in pub["title"] or "plasticity" in pub["title"] or \
+            "h-reflex" in pub["title"] or "operant" in pub["title"] or \
+            "rats" in pub["title"]:
+            pub["TR&D"] = 1
+        elif "brain" in pub["title"] and "computer" in pub["title"] and \
+            "interface" in pub["title"] or "bci" in pub["title"] or \
+            "eeg" in pub["title"] or "p300" in pub["title"]:
+            pub["TR&D"] = 2
+        elif "cortical" in pub["title"] or "electrocorticography" in pub["title"] or \
+            "ecog" in pub["title"] or "cortex" in pub["title"] or \
+            "electrocorticographic" in pub["title"] or "neural" in pub["title"]:
+            pub["TR&D"] = 3
+        else:
+            while True:
+                trd = input('Under which TR&D does "{}" fall (1/2/3)? '.format(pub["title"]))
+                if trd in ["1", "2", "3"]:
+                    pub["TR&D"] = int(trd)
+                    break
+
     # Create variable to hold summary data
     sumData = []
     sumHeader = collections.OrderedDict()
@@ -95,60 +118,36 @@ def main():
     sumHeader["Reddit Posts"] = None
     sumHeader["Tweets"] = None
     sumHeader["Wikipedia Mentions"] = None
-    sumData.append({'Year': 2013, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
-        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
-    sumData.append({'Year': 2014, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
-        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
-    sumData.append({'Year': 2015, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
-        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
-    sumData.append({'Year': 2016, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
-        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
-    sumData.append({'Year': 2017, 'Count': 0, 'Weighted RCR': 0,
-        'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-        'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-        'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
-        "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-        "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-        "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
+    for trd in [1, 2, 3, "Total"]:
+        for yr in [2013, 2014, 2015, 2016, 2017]:
+            sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0, 'Weighted RCR': 0,
+                'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
+                'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
+                'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+                "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
+                "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
+                "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
     
     #Determine number of publications per year
-    for pub in pubs:
-        for year in sumData:
-            if pub["year"] == year["Year"]:
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
+                year["TR&D"] == "Total"):
                 year["Count"] += 1
-                break
 
     #Determine Weighted RCR and Mean RCR
-    for pub in pubs:
-        for year in sumData:
-            if pub["year"] == year["Year"] and pub['relative_citation_ratio'] is not None:
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and pub['relative_citation_ratio'] is not None and \
+            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
                 year['Weighted RCR'] += pub['relative_citation_ratio']
                 year['Mean RCR'] += pub['relative_citation_ratio']/year['Count']
 
     # Determine Average NIH Percentile
-    for pub in pubs:
-        for year in sumData:
-            if pub["year"] == year["Year"] and pub['nih_percentile'] is not None:
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and pub['nih_percentile'] is not None and \
+            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
                 year['Average NIH Percentile'] += pub['nih_percentile']/year['Count']
 
     #Import Thompson-Reuters JIF Information
@@ -228,15 +227,17 @@ def main():
             pub["JIF Quartile"] = 4
 
     # Determine JIF Metrics
-    for pub in pubs:
-            for year in sumData:
-                if pub["year"] == year["Year"] and pub["JIF Quartile"] == 1:
-                    year["Num in JIF Q1"] += 1
-                if pub["year"] == year["Year"]:
-                    year["Average JIF Quartile"] += pub["JIF Quartile"]/year["Count"]
-                    year["Average JIF"] += pub["JIF"]/year["Count"]
-                    year["Sum JIF"] += pub["JIF"]
-                    year["Average JIF Percentile"] += pub["JIF Percentile"]/year["Count"]
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and pub["JIF Quartile"] == 1 and \
+            (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
+                year["Num in JIF Q1"] += 1
+            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
+                year["TR&D"] == "Total"):
+                year["Average JIF Quartile"] += pub["JIF Quartile"]/year["Count"]
+                year["Average JIF"] += pub["JIF"]/year["Count"]
+                year["Sum JIF"] += pub["JIF"]
+                year["Average JIF Percentile"] += pub["JIF Percentile"]/year["Count"]
     for year in sumData:
         year["Percent in JIF Q1"] = year["Num in JIF Q1"]/year["Count"]
 
@@ -263,7 +264,6 @@ def main():
         info["pmid"] = int(info["pmid"])
         for pub in pubs:
             if info["pmid"] == pub["pmid"]:
-                print("TEST")
                 for key in info.keys():
                     if key[0:5] == "cited":
                         if info[key].isnumeric():
@@ -271,9 +271,9 @@ def main():
                             pubsHeader.add(key)
 
     #Tally Altmetric Data
-    for pub in pubs:
-        for year in sumData:
-            if pub["year"] == year["Year"]:
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
                 for key in pub.keys():
                     if key == "cited_by_accounts_count":
                         year["Social Media Account Shares"] += pub["cited_by_accounts_count"]
@@ -339,6 +339,12 @@ def main():
                 col += 1
         col = 0
         row += 1
+        if year["Year"] == 2017:
+            for header in list(sumHeader.keys()):
+                summary.write(row, col, header, bold)
+                col += 1
+            col = 0
+            row += 1
 
     workbook.close()
     print("NCAN Bibliometric Assessment complete. View NCAN Data.xlsx for data")
