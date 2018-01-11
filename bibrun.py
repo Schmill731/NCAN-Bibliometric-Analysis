@@ -118,6 +118,8 @@ def main():
     sumHeader["Reddit Posts"] = None
     sumHeader["Tweets"] = None
     sumHeader["Wikipedia Mentions"] = None
+    sumHeader["Unique Authors"] = None
+    sumHeader["New Authors"] = None
     for trd in [1, 2, 3, "Total"]:
         for yr in [2013, 2014, 2015, 2016, 2017]:
             sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0, 'Weighted RCR': 0,
@@ -126,7 +128,47 @@ def main():
                 'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
                 "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
                 "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-                "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0})
+                "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0,
+                "Unique Authors": 0, "New Authors": 0, "authors": []})
+
+    # Determine number of unique authors and new authors
+    newAuthors = {}
+    for trd in [1, 2, 3, "Total"]:
+        for yr in [2013, 2014, 2015, 2016, 2017]:
+            newAuthors[(trd, yr)] = []
+    same = False
+    new = True
+    for year in sumData:
+        for pub in pubs:
+            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
+                year["TR&D"] == "Total"):
+                authors = pub["authors"].split(", ")
+                for pubAuthor in authors:
+                    for yearAuthor in year["authors"]:
+                        if pubAuthor.split(" ")[-1] == yearAuthor.split(" ")[-1] and \
+                        pubAuthor[0] == yearAuthor[0]:
+                            same = True
+                    if not same:
+                        year["authors"].append(pubAuthor)
+                    same = False
+            if (pub["TR&D"] == year["TR&D"] or year["TR&D"] == 'Total') and \
+                pub["year"] <= year["Year"]:
+                authors = pub["authors"].split(", ")
+                for pubAuthor in authors:
+                    for newAuthor in newAuthors[(year["TR&D"], year["Year"])]:
+                        if pubAuthor.split(" ")[-1] == newAuthor.split(" ")[-1] and \
+                        pubAuthor[0] == newAuthor[0]:
+                            new = False
+                    if new:
+                        newAuthors[(year["TR&D"], year["Year"])].append(pubAuthor)
+                    new = True
+        if year["Year"] > 2013:
+            for past in range(2013, year["Year"]):
+                for pastAuthor in newAuthors[(year["TR&D"], past)]:
+                    if pastAuthor in newAuthors[(year["TR&D"], year["Year"])]:
+                        newAuthors[(year["TR&D"], year["Year"])].remove(pastAuthor)
+            year["New Authors"] = len(newAuthors[(year["TR&D"], year["Year"])])
+        year["Unique Authors"] = len(year["authors"])
     
     #Determine number of publications per year
     for year in sumData:
