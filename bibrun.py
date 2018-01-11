@@ -38,7 +38,7 @@ def main():
     pubMedURL = input("Please copy and paste the URL from your PubMed Search: ")
     pubMedURL = pubMedURL.replace("https://www.ncbi.nlm.nih.gov/pubmed/?",
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
-    print(pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000"))
+    pubMedURL = pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000")
     pubMedInfo = requests.get(pubMedURL)
     if pubMedInfo.status_code == 200:
         tree = ElementTree.fromstring(pubMedInfo.content)
@@ -60,15 +60,10 @@ def main():
     else:
         print("Error getting iCite information.")
         print("Response Code: " + str(iCite.status_code))
-        while True:
-            cont = input("Do you wish to continue without iCite information (y/n)?")
-            if cont == "y":
-                break
-            elif cont == "n":
-                print("Aborting...")
-                return
+        print("Aborting...")
+        return
 
-    #List of publication information
+    #Create list of publication information
     pubs = iCite.json()["data"]
     for key in sorted(pubs[0].keys()):
         pubsHeader.add(key)
@@ -76,66 +71,63 @@ def main():
     pubsHeader.add("JIF Percentile")
     pubsHeader.add("JIF Quartile")
 
-    #Ask about TR&D
+    #Classify each publication according to its TR&D based on keywords or input
     for pub in pubs:
         pub["title"] = pub["title"].lower()
-        if "spinal" in pub["title"] and "cord" in pub["title"] and \
-            "injury" in pub["title"] or "plasticity" in pub["title"] or \
-            "h-reflex" in pub["title"] or "operant" in pub["title"] or \
+        if "spinal cord injury" in pub["title"] or \
+            "plasticity" in pub["title"] or \
+            "h-reflex" in pub["title"] or \
+            "operant conditioning" in pub["title"] or \
             "rats" in pub["title"]:
-            pub["TR&D"] = 1
-        elif "brain" in pub["title"] and "computer" in pub["title"] and \
-            "interface" in pub["title"] or "bci" in pub["title"] or \
-            "eeg" in pub["title"] or "p300" in pub["title"]:
-            pub["TR&D"] = 2
-        elif "cortical" in pub["title"] or "electrocorticography" in pub["title"] or \
-            "ecog" in pub["title"] or "cortex" in pub["title"] or \
-            "electrocorticographic" in pub["title"] or "neural" in pub["title"]:
-            pub["TR&D"] = 3
+                pub["TR&D"] = 1
+        elif "brain" in pub["title"] and \
+            "computer" in pub["title"] and \
+            "interface" in pub["title"] or \
+            "bci" in pub["title"] or \
+            "eeg" in pub["title"] or \
+            "p300" in pub["title"]:
+                pub["TR&D"] = 2
+        elif "cortical" in pub["title"] or \
+            "electrocorticography" in pub["title"] or \
+            "ecog" in pub["title"] or \
+            "cortex" in pub["title"] or \
+            "electrocorticographic" in pub["title"] or \
+            "neural" in pub["title"]:
+                pub["TR&D"] = 3
         else:
             while True:
-                trd = input('Under which TR&D does "{}" fall (1/2/3)? '.format(pub["title"]))
-                if trd in ["1", "2", "3"]:
-                    pub["TR&D"] = int(trd)
-                    break
+                trd = input('Under which TR&D does "{}" fall (1/2/3/c/n)? '.format(pub["title"]))
+                if trd in ["1", "2", "3", "c", "n"]:
+                    try:
+                        pub["TR&D"] = int(trd)
+                        break
+                    except:
+                        pub["TR&D"] = trd
+                        break
 
     # Create variable to hold summary data
     sumData = []
+    sumInfo = ["TR&D", "Year", "Count", "Weighted RCR", "Mean RCR",
+        "Average NIH Percentile", "Num in JIF Q1", "Percent in JIF Q1", 
+        "Average JIF Quartile", "Average JIF", "Sum JIF",
+        "Average JIF Percentile", "Social Media Account Shares",
+        "Facebook Posts", "Blog Posts", "Google Plus Posts", "News Articles",
+        "Peer Review Site Posts", "Total Social Media Posts", "QNA Posts",
+        "Reddit Posts", "Tweets", "Wikiepedia", "Unique Authors", "New Authors"]
     sumHeader = collections.OrderedDict()
-    sumHeader["TR&D"] = None
-    sumHeader["Year"] = None
-    sumHeader["Count"] = None
-    sumHeader["Weighted RCR"] = None
-    sumHeader["Mean RCR"] = None
-    sumHeader["Average NIH Percentile"] = None
-    sumHeader["Num in JIF Q1"] = None
-    sumHeader["Percent in JIF Q1"] = None
-    sumHeader["Average JIF Quartile"] = None
-    sumHeader["Average JIF"] = None
-    sumHeader["Sum JIF"] = None
-    sumHeader["Average JIF Percentile"] = None
-    sumHeader["Social Media Account Shares"] = None
-    sumHeader["Facebook Posts"] = None
-    sumHeader["Blog Posts"] = None
-    sumHeader["Google Plus Posts"] = None
-    sumHeader["News Articles"] = None
-    sumHeader["Peer Review Site Posts"] = None
-    sumHeader["Total Social Media Posts"] = None
-    sumHeader["QNA Posts"] = None
-    sumHeader["Reddit Posts"] = None
-    sumHeader["Tweets"] = None
-    sumHeader["Wikipedia Mentions"] = None
-    sumHeader["Unique Authors"] = None
-    sumHeader["New Authors"] = None
+    for info in sumInfo:
+        sumHeader[info] = None
     for trd in [1, 2, 3, "Total"]:
         for yr in [2013, 2014, 2015, 2016, 2017]:
-            sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0, 'Weighted RCR': 0,
-                'Mean RCR': 0, 'Average NIH Percentile': 0, 'Num in JIF Q1': 0,
-                'Percent in JIF Q1': 0, 'Average JIF Quartile': 0, 'Average JIF': 0,
-                'Sum JIF': 0, 'Average JIF Percentile': 0, "Social Media Account Shares": 0,
+            sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0,
+                'Weighted RCR': 0, 'Mean RCR': 0, 'Average NIH Percentile': 0,
+                'Num in JIF Q1': 0, 'Percent in JIF Q1': 0,
+                'Average JIF Quartile': 0, 'Average JIF': 0, 'Sum JIF': 0,
+                'Average JIF Percentile': 0, "Social Media Account Shares": 0,
                 "Facebook Posts": 0, "Blog Posts": 0, "Google Plus Posts": 0,
-                "News Articles": 0, "Peer Review Site Posts": 0, "Total Social Media Posts": 0,
-                "QNA Posts": 0, "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0,
+                "News Articles": 0, "Peer Review Site Posts": 0,
+                "Total Social Media Posts": 0, "QNA Posts": 0,
+                "Reddit Posts": 0, "Tweets": 0, "Wikipedia Mentions": 0,
                 "Unique Authors": 0, "New Authors": 0, "authors": []})
 
     # Determine number of unique authors and new authors
