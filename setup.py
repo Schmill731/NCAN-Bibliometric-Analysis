@@ -14,4 +14,5 @@ setup(name='ncan_bibrun',
       install_requires=['requests', 'xlsxwriter'],
       scripts=['bin/ncan-bibrun'],
       include_package_data=True,
+      long_description=readme(),
       zip_safe=False)

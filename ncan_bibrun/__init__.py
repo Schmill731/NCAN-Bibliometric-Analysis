@@ -64,7 +64,7 @@ def bibrun():
     iCite = requests.get("https://icite.od.nih.gov/api/pubs?pmids=" +
         ",".join(pmidList))
     if iCite.status_code == 200:
-        print("iCite data collected.")
+        print("iCite data collected for {} publications".format(len(iCite.json()["data"])))
     else:
         print("Error getting iCite information.")
         print("Response Code: " + str(iCite.status_code))
