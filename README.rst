@@ -12,6 +12,7 @@ Introduction
 The NCAN Bibliometric Analysis Script was built to cultivate a list of research publications from the URL of a PubMed Search and report several bibliometrics for each publication, as well as the yearly statistics. Bibliometrics calculated include the number of publications; iCite RCR, Weighted RCR, and Mean RCR; Thompson's Reuters' Journal Impact Factor (JIF), JIF Quartile, and JIF Percentile; and Altmetrics.com's count of citations in social media and news posts.The script has the following features:
 
 * It can take the URL of any PubMed search and perform an analysis.
+
 * It will automatically classify all articles to the appropriate Team Research & Development Division of NCAN according to whether it contains one of the following words. If it cannot be automatically classified, the user will be asked to classify it into one of the TR&Ds (1, 2, 3), a collaborative & service project (c) or none of the above (n).
     - Team Research & Development 1:
         + Spinal Cord Injury
