@@ -10,28 +10,28 @@ Introduction
 -------------
 
 The NCAN Bibliometric Analysis Script was built to cultivate a list of research publications from the URL of a PubMed Search and report several bibliometrics for each publication, as well as the yearly statistics. Bibliometrics calculated include the number of publications; iCite RCR, Weighted RCR, and Mean RCR; Thompson's Reuters' Journal Impact Factor (JIF), JIF Quartile, and JIF Percentile; and Altmetrics.com's count of citations in social media and news posts.The script has the following features:
-* It can take the URL of any PubMed search and perform an analysis.
-* It will automatically classify all articles to the appropriate Team Research & Development Division of NCAN according to whether it contains one of the following words. If it cannot be automatically classified, the user will be asked to classify it into one of the TR&Ds (1, 2, 3), a collaborative & service project (c) or none of the above (n).
-    - Team Research & Development 1:
-        + Spinal Cord Injury
-        + Plasticity
-        + H-Reflex
-        + Operant Conditioning
-        + Rats
-    - Team Research & Development 2:
-        + Brain Computer Interface
-        + BCI
-        + EEG
-        + P300
-    - Team Research & Development 3:
-        + Cortical
-        + Electrocorticography
-        + ECoG
-        + Cortex
-        + Electrocorticographic
-        + Epilepsy
-* It will automatically find the Journal Impact Factor for each publication's journal. Occassionally, due to errors in the abbreviated title of the journal, the script will ask the user to confirm whether a given abbreviated title matches a journal.
-* It will automatically create an Excel spreadsheet with all the data titled "NCAN Bibliometric Data.xlsx", which will be saved on the user's Desktop.
+    * It can take the URL of any PubMed search and perform an analysis.
+    * It will automatically classify all articles to the appropriate Team Research & Development Division of NCAN according to whether it contains one of the following words. If it cannot be automatically classified, the user will be asked to classify it into one of the TR&Ds (1, 2, 3), a collaborative & service project (c) or none of the above (n).
+        - Team Research & Development 1:
+            + Spinal Cord Injury
+            + Plasticity
+            + H-Reflex
+            + Operant Conditioning
+            + Rats
+        - Team Research & Development 2:
+            + Brain Computer Interface
+            + BCI
+            + EEG
+            + P300
+        - Team Research & Development 3:
+            + Cortical
+            + Electrocorticography
+            + ECoG
+            + Cortex
+            + Electrocorticographic
+            + Epilepsy
+    * It will automatically find the Journal Impact Factor for each publication's journal. Occassionally, due to errors in the abbreviated title of the journal, the script will ask the user to confirm whether a given abbreviated title matches a journal.
+    * It will automatically create an Excel spreadsheet with all the data titled "NCAN Bibliometric Data.xlsx", which will be saved on the user's Desktop.
 
 
 Installation
