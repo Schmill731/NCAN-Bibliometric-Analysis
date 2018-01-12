@@ -36,15 +36,23 @@ def bibrun():
     pubMedURL = input("Please copy and paste the URL from your PubMed Search: ")
     pubMedURL = pubMedURL.replace("https://www.ncbi.nlm.nih.gov/pubmed/?",
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
+    pubMedURL = pubMedURL.replace("https://www.ncbi.nlm.nih.gov/pubmed?",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
     pubMedURL = pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000")
     pubMedInfo = requests.get(pubMedURL)
 
     #Determine whether PubMed ID Search was Successful
     if pubMedInfo.status_code == 200:
         tree = ElementTree.fromstring(pubMedInfo.content)
-        print(tree.find('Count').text + " PubMed IDs obtained.")
-        for id in list(tree.find('IdList')):
-            pmidList.append(id.text)
+        if tree.find('Count') == None:
+            print(pubMedURL)
+            print("Error obtaining PMIDs.")
+            print("Aborting")
+            return
+        else:
+            print(tree.find('Count').text + " PubMed IDs obtained.")
+            for id in list(tree.find('IdList')):
+                pmidList.append(id.text)
     else:
         print("Error obtaining PMIDs.")
         print("Response Code: " + str(pubMedInfo.status_code))
@@ -125,8 +133,15 @@ def bibrun():
     sumHeader = collections.OrderedDict()
     for info in sumHeaderNames:
         sumHeader[info] = None
-    for trd in [1, 2, 3, "Total"]:
-        for yr in [2013, 2014, 2015, 2016, 2017]:
+    minYear = 3000
+    maxYear = 0
+    for pub in pubs:
+        if pub["year"] < minYear:
+            minYear = pub["year"]
+        if pub["year"] > maxYear:
+            maxYear = pub["year"]
+    for trd in [1, 2, 3, 'c', 'n', "Total"]:
+        for yr in range(minYear, maxYear + 1):
             sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0,
                 'Weighted RCR': 0, 'Mean RCR': 0, 'Average NIH Percentile': 0,
                 'Num in JIF Q1': 0, 'Percent in JIF Q1': 0,
@@ -140,8 +155,8 @@ def bibrun():
 
     # Create variables and flags to signify unique and new authors
     newAuthors = {}
-    for trd in [1, 2, 3, "Total"]:
-        for yr in [2013, 2014, 2015, 2016, 2017]:
+    for trd in [1, 2, 3, 'c', 'n', "Total"]:
+        for yr in range(minYear, maxYear + 1):
             newAuthors[(trd, yr)] = []
     same = False
     new = True
@@ -164,8 +179,8 @@ def bibrun():
                         newAuthors[(sumStat["TR&D"], sumStat["Year"])])]
 
         # Calculate the number of new authors and unique authors
-        if sumStat["Year"] > 2013:
-            for past in range(2013, sumStat["Year"]):
+        if sumStat["Year"] > minYear:
+            for past in range(minYear, sumStat["Year"]):
                 newAuthors[(sumStat["TR&D"], sumStat["Year"])] = [author
                     for author in newAuthors[(sumStat["TR&D"], sumStat["Year"])]
                     if author not in newAuthors[(sumStat["TR&D"], past)]]
@@ -185,15 +200,21 @@ def bibrun():
             for pub in pubs if pub["year"] == sumStat["Year"] and \
             pub['relative_citation_ratio'] is not None and \
             (pub["TR&D"] == sumStat["TR&D"] or sumStat["TR&D"] == "Total")])
-        sumStat['Mean RCR'] = sumStat['Weighted RCR']/sumStat['Count']
+        try:
+            sumStat['Mean RCR'] = sumStat['Weighted RCR']/sumStat['Count']
+        except:
+            sumStat['Mean RCR'] = 0
 
     # Determine Average NIH Percentile
     for sumStat in sumData:
-        sumStat['Average NIH Percentile'] = sum([pub['nih_percentile']
-            for pub in pubs if pub["year"] == sumStat["Year"] and \
-            pub['nih_percentile'] is not None and \
-            (pub["TR&D"] == sumStat["TR&D"] or \
-            sumStat["TR&D"] == "Total")])/sumStat['Count']
+        try:
+            sumStat['Average NIH Percentile'] = sum([pub['nih_percentile']
+                for pub in pubs if pub["year"] == sumStat["Year"] and \
+                pub['nih_percentile'] is not None and \
+                (pub["TR&D"] == sumStat["TR&D"] or \
+                sumStat["TR&D"] == "Total")])/sumStat['Count']
+        except:
+            sumStat['Average NIH Percentile'] = 0
 
     #Import Thompson-Reuters JIF Information
     jifHeader = ["Rank", "Full Title", "JCR Title", "JIF", "JIFPercent"]
@@ -293,14 +314,26 @@ def bibrun():
             if pub["year"] == sumStat["Year"] and \
             pub["JIF Quartile"] == 1 and \
             (pub["TR&D"] == sumStat["TR&D"] or sumStat["TR&D"] == "Total")])
-        sumStat["Percent in JIF Q1"] = sumStat["Num in JIF Q1"]/sumStat["Count"]
+        try:
+            sumStat["Percent in JIF Q1"] = sumStat["Num in JIF Q1"]/sumStat["Count"]
+        except:
+            sumStat['Percent in JIF Q1'] = 0
         for pub in pubs:
             if pub["year"] == sumStat["Year"] and (pub["TR&D"] == sumStat["TR&D"] or \
                 sumStat["TR&D"] == "Total"):
-                sumStat["Average JIF Quartile"] += pub["JIF Quartile"]/sumStat["Count"]
+                try:
+                    sumStat["Average JIF Quartile"] += pub["JIF Quartile"]/sumStat["Count"]
+                except:
+                    sumStat['Average JIF Quartile'] = 0
                 sumStat["Sum JIF"] += pub["JIF"]
-                sumStat["Average JIF Percentile"] += pub["JIF Percentile"]/sumStat["Count"]
-        sumStat["Average JIF"] += sumStat["Sum JIF"]/sumStat["Count"]
+                try:
+                    sumStat["Average JIF Percentile"] += pub["JIF Percentile"]/sumStat["Count"]
+                except:
+                    sumStat['Average JIF Percentile'] = 0
+        try:
+            sumStat["Average JIF"] += sumStat["Sum JIF"]/sumStat["Count"]
+        except:
+            sumStat['Average JIF'] = 0
 
 
     print("Journal Impact Factor Information Added.")
@@ -368,7 +401,7 @@ def bibrun():
 
     #Write NCAN Data.xlsx, start with pubData
     desktop_dir = os.path.join(os.path.expanduser('~'), "Desktop")
-    workbook = xlsxwriter.Workbook(desktop_dir + '/NCAN Data.xlsx')
+    workbook = xlsxwriter.Workbook(desktop_dir + '/NCAN Bibliometric Data.xlsx')
     bold = workbook.add_format({'bold': True})
     pubData = workbook.add_worksheet('pubData')
     row = 0
@@ -406,7 +439,7 @@ def bibrun():
                 col += 1
         col = 0
         row += 1
-        if sumStat["Year"] == 2017:
+        if sumStat["Year"] == maxYear:
             for header in list(sumHeader.keys()):
                 summary.write(row, col, header, bold)
                 col += 1
@@ -415,6 +448,8 @@ def bibrun():
 
     workbook.close()
     print("NCAN Bibliometric Assessment complete. View NCAN Data.xlsx for data")
+
+    exit()
 
 def similar(str1, str2):
     return SequenceMatcher(None, str1, str2).ratio()
