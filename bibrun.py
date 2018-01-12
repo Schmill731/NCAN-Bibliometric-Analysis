@@ -296,30 +296,29 @@ def main():
             (pub["TR&D"] == sumStat["TR&D"] or sumStat["TR&D"] == "Total")])
         sumStat["Percent in JIF Q1"] = sumStat["Num in JIF Q1"]/sumStat["Count"]
         for pub in pubs:
-            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or \
-                year["TR&D"] == "Total"):
-                year["Average JIF Quartile"] += pub["JIF Quartile"]/year["Count"]
-                year["Average JIF"] += pub["JIF"]/year["Count"]
-                year["Sum JIF"] += pub["JIF"]
-                year["Average JIF Percentile"] += pub["JIF Percentile"]/year["Count"]
+            if pub["year"] == sumStat["Year"] and (pub["TR&D"] == sumStat["TR&D"] or \
+                sumStat["TR&D"] == "Total"):
+                sumStat["Average JIF Quartile"] += pub["JIF Quartile"]/sumStat["Count"]
+                sumStat["Sum JIF"] += pub["JIF"]
+                sumStat["Average JIF Percentile"] += pub["JIF Percentile"]/sumStat["Count"]
+        sumStat["Average JIF"] += sumStat["Sum JIF"]/sumStat["Count"]
 
 
     print("Journal Impact Factor Information Added.")
 
-    # DEBUG TEST
+    #Get Altmetric Data
     listofinfo = []
-    with open("altmetric.csv", "r") as altmetricFile:
-        altmetricData = csv.DictReader(altmetricFile)
-        listofinfo = list(altmetricData)
-
-    # #Get Altmetric Data
-    # listofinfo = []
-    # for pmid in pmidList:
-    #     response = requests.get("https://api.altmetric.com/v1/pmid/" + pmid)
-    #     if response.status_code == 200:
-    #         listofinfo.append(response.json())
-    #     elif response.status_code != 404:
-    #         print("Error getting article (may be rate-limited)")
+    notFound = False
+    for pmid in pmidList:
+        response = requests.get("https://api.altmetric.com/v1/pmid/" + pmid)
+        if response.status_code == 200:
+            listofinfo.append(response.json())
+        elif response.status_code == 404:
+            notFound = True
+        elif response.status_code != 404:
+            print("Error getting article (may be rate-limited)")
+    if notFound:
+        print("Not all articles on Altmetric. Data will be incomplete.")
 
     #Add Altmetric Data
     for info in listofinfo:
@@ -328,37 +327,43 @@ def main():
             if info["pmid"] == pub["pmid"]:
                 for key in info.keys():
                     if key[0:5] == "cited":
-                        if info[key].isnumeric():
+                        if isinstance(info[key], str) and info[key].isnumeric():
                             pub[key] = int(info[key])
                             pubsHeader.add(key)
+                        elif isinstance(info[key], int) or \
+                            isinstance(info[key], float):
+                                pub[key] = info[key]
+                                pubsHeader.add(key)
 
     #Tally Altmetric Data
-    for year in sumData:
+    for sumStat in sumData:
         for pub in pubs:
-            if pub["year"] == year["Year"] and (pub["TR&D"] == year["TR&D"] or year["TR&D"] == "Total"):
-                for key in pub.keys():
-                    if key == "cited_by_accounts_count":
-                        year["Social Media Account Shares"] += pub["cited_by_accounts_count"]
-                    if key == "cited_by_fbwalls_count":
-                        year["Facebook Posts"] += pub["cited_by_fbwalls_count"]
-                    if key == "cited_by_feeds_count":
-                        year["Blog Posts"] += pub["cited_by_feeds_count"]
-                    if key == "cited_by_gplus_count":
-                        year["Google Plus Posts"] += pub["cited_by_gplus_count"]
-                    if key == "cited_by_msm_count":
-                        year["News Articles"] += pub["cited_by_msm_count"]
-                    if key == "cited_by_peer_review_sites_count":
-                        year["Peer Review Site Posts"] += pub["cited_by_peer_review_sites_count"]
-                    if key == "cited_by_posts_count":
-                        year["Total Social Media Posts"] += pub["cited_by_posts_count"]
-                    if key == "cited_by_qna_count":
-                        year["QNA Posts"] += pub["cited_by_qna_count"]
-                    if key == "cited_by_rdts_count":
-                        year["Reddit Posts"] += pub["cited_by_rdts_count"]
-                    if key == "cited_by_tweeters_count":
-                        year["Tweets"] += pub["cited_by_tweeters_count"]
-                    if key == "cited_by_wikipedia_count":
-                        year["Wikipedia Mentions"] += pub["cited_by_wikipedia_count"]
+            if pub["year"] == sumStat["Year"] and \
+                (pub["TR&D"] == sumStat["TR&D"] or \
+                sumStat["TR&D"] == "Total"):
+                    for key in pub.keys():
+                        if key == "cited_by_accounts_count":
+                            sumStat["Social Media Account Shares"] += pub["cited_by_accounts_count"]
+                        if key == "cited_by_fbwalls_count":
+                            sumStat["Facebook Posts"] += pub["cited_by_fbwalls_count"]
+                        if key == "cited_by_feeds_count":
+                            sumStat["Blog Posts"] += pub["cited_by_feeds_count"]
+                        if key == "cited_by_gplus_count":
+                            sumStat["Google Plus Posts"] += pub["cited_by_gplus_count"]
+                        if key == "cited_by_msm_count":
+                            sumStat["News Articles"] += pub["cited_by_msm_count"]
+                        if key == "cited_by_peer_review_sites_count":
+                            sumStat["Peer Review Site Posts"] += pub["cited_by_peer_review_sites_count"]
+                        if key == "cited_by_posts_count":
+                            sumStat["Total Social Media Posts"] += pub["cited_by_posts_count"]
+                        if key == "cited_by_qna_count":
+                            sumStat["QNA Posts"] += pub["cited_by_qna_count"]
+                        if key == "cited_by_rdts_count":
+                            sumStat["Reddit Posts"] += pub["cited_by_rdts_count"]
+                        if key == "cited_by_tweeters_count":
+                            sumStat["Tweets"] += pub["cited_by_tweeters_count"]
+                        if key == "cited_by_wikipedia_count":
+                            sumStat["Wikipedia Mentions"] += pub["cited_by_wikipedia_count"]
 
     print("Altmetric Data Added.")
 
