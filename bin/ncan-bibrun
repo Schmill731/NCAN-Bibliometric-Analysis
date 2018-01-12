@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+
+from ncan_bibrun import bibrun
+bibrun()

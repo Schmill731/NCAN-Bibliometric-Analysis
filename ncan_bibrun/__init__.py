@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-# Bibrun.py
-#
 # Runs a bibliometric assessment of the given PubMed Search URL.
 # Records bibliometrics using NIH's freely accessible iCite tool,
 # Thompson-Reuters Journal Impact Factor (JIF), and Altmetrics.com.
@@ -15,6 +11,7 @@
 
 
 # Import Required Packages
+import pkg_resources
 import sys
 import requests
 import xlsxwriter
@@ -22,8 +19,9 @@ import collections
 import csv
 from difflib import SequenceMatcher
 from xml.etree import ElementTree
+import os
 
-def main():
+def bibrun():
     print("----------NCAN Bibliometric Assessment----------")
     print("Usage Instructions (Requires @neurotechcenter.org account): " +
         "https://docs.google.com/document/d/1Grehao_5cqiCKP3X8-6QblR93" +
@@ -200,7 +198,8 @@ def main():
     #Import Thompson-Reuters JIF Information
     jifHeader = ["Rank", "Full Title", "JCR Title", "JIF", "JIFPercent"]
     jifRanks = []
-    with open('JournalHomeGrid.csv', 'r') as jifFile:
+    path = pkg_resources.resource_filename('ncan_bibrun', 'JournalHomeGrid.csv')
+    with open(path, 'r') as jifFile:
         jifRankings = csv.DictReader(jifFile, fieldnames=jifHeader)
         jifRanks = list(jifRankings)
     jifRanks = [journal for journal in jifRanks if journal["Rank"].isnumeric()]
@@ -368,7 +367,8 @@ def main():
     print("Altmetric Data Added.")
 
     #Write NCAN Data.xlsx, start with pubData
-    workbook = xlsxwriter.Workbook('NCAN Data.xlsx')
+    desktop_dir = os.path.join(os.path.expanduser('~'), "Desktop")
+    workbook = xlsxwriter.Workbook(desktop_dir + '/NCAN Data.xlsx')
     bold = workbook.add_format({'bold': True})
     pubData = workbook.add_worksheet('pubData')
     row = 0
@@ -397,16 +397,16 @@ def main():
         col += 1
     col = 0
     row += 1
-    for year in sumData:
+    for sumStat in sumData:
         for header in sumHeader:
-            if header in year.keys():
-                summary.write(row, col, year[header])
+            if header in sumStat.keys():
+                summary.write(row, col, sumStat[header])
                 col += 1
             else:
                 col += 1
         col = 0
         row += 1
-        if year["Year"] == 2017:
+        if sumStat["Year"] == 2017:
             for header in list(sumHeader.keys()):
                 summary.write(row, col, header, bold)
                 col += 1
@@ -426,7 +426,3 @@ def sameAuthor(author, lst):
             author[0] == elt[0]:
                 same = True
     return same
-
-# Run the program!
-if __name__ == "__main__":
-    main()
