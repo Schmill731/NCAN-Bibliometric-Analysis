@@ -23,9 +23,6 @@ import os
 
 def bibrun():
     print("----------NCAN Bibliometric Assessment----------")
-    print("Usage Instructions (Requires @neurotechcenter.org account): " +
-        "https://docs.google.com/document/d/1Grehao_5cqiCKP3X8-6QblR93" +
-        "LVuFMZcNhYH4j_Agzc/edit?usp=sharing\n\n\n")
 
     # Create header fields for Publications spreadsheet
     pubsHeader = set()
@@ -39,6 +36,8 @@ def bibrun():
     pubMedURL = pubMedURL.replace("https://www.ncbi.nlm.nih.gov/pubmed?",
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&")
     pubMedURL = pubMedURL.replace("&cmd=DetailsSearch", "&retmax=1000")
+    if "&retmax=1000" not in pubMedURL:
+        pubMedURL = pubMedURL + "&retmax=1000"
     pubMedInfo = requests.get(pubMedURL)
 
     #Determine whether PubMed ID Search was Successful
@@ -79,57 +78,70 @@ def bibrun():
     pubsHeader.add("JIF Percentile")
     pubsHeader.add("JIF Quartile")
 
+    #Ask whether we want to classify according to TR&D
+    while True:
+        trdClassify = input("Do you want to classify these articles " +
+            "according to their TR&D (y/n)?")
+        if trdClassify in ['y', 'n']:
+            break
+
     #Classify each publication according to its TR&D based on keywords or input
-    for pub in pubs:
-        pub["title"] = pub["title"].lower()
+    if trdClassify == 'y':
+        for pub in pubs:
+            pub["title"] = pub["title"].lower()
 
-        #TR&D 1 Classifiers
-        if "spinal cord injury" in pub["title"] or \
-            "plasticity" in pub["title"] or \
-            "h-reflex" in pub["title"] or \
-            "operant conditioning" in pub["title"] or \
-            "rats" in pub["title"]:
-                pub["TR&D"] = 1
+            #TR&D 1 Classifiers
+            if "spinal cord injury" in pub["title"] or \
+                "plasticity" in pub["title"] or \
+                "h-reflex" in pub["title"] or \
+                "operant conditioning" in pub["title"] or \
+                "rats" in pub["title"]:
+                    pub["TR&D"] = 1
 
-        #TR&D 2 Classifiers
-        elif "brain" in pub["title"] and \
-            "computer" in pub["title"] and \
-            "interface" in pub["title"] or \
-            "bci" in pub["title"] or \
-            "eeg" in pub["title"] or \
-            "p300" in pub["title"]:
-                pub["TR&D"] = 2
+            #TR&D 2 Classifiers
+            elif "brain" in pub["title"] and \
+                "computer" in pub["title"] and \
+                "interface" in pub["title"] or \
+                "bci" in pub["title"] or \
+                "eeg" in pub["title"] or \
+                "p300" in pub["title"]:
+                    pub["TR&D"] = 2
 
-        #TR&D 3 Classifiers
-        elif "cortical" in pub["title"] or \
-            "electrocorticography" in pub["title"] or \
-            "ecog" in pub["title"] or \
-            "cortex" in pub["title"] or \
-            "electrocorticographic" in pub["title"] or \
-            "epilepsy" in pub["title"]:
-                pub["TR&D"] = 3
+            #TR&D 3 Classifiers
+            elif "cortical" in pub["title"] or \
+                "electrocorticography" in pub["title"] or \
+                "ecog" in pub["title"] or \
+                "cortex" in pub["title"] or \
+                "electrocorticographic" in pub["title"] or \
+                "epilepsy" in pub["title"]:
+                    pub["TR&D"] = 3
 
-        #Ask for manual classification
-        else:
-            while True:
-                trd = input('Under which TR&D does "{}" fall (1/2/3/c/n)? '.format(pub["title"]))
-                if trd in ["1", "2", "3", "c", "n"]:
-                    try:
-                        pub["TR&D"] = int(trd)
-                        break
-                    except:
-                        pub["TR&D"] = trd
-                        break
+            #Ask for manual classification
+            else:
+                while True:
+                    trd = input('Under which TR&D does "{}" fall (1/2/3/c/n)? '.format(pub["title"]))
+                    if trd in ["1", "2", "3", "c", "n"]:
+                        try:
+                            pub["TR&D"] = int(trd)
+                            break
+                        except:
+                            pub["TR&D"] = trd
+                            break
+    else:
+        for pub in pubs:
+            pub["TR&D"] = 'Total'
 
     # Create variables to holder summary statistics and header info
     sumData = []
-    sumHeaderNames = ["TR&D", "Year", "Count", "Weighted RCR", "Mean RCR",
+    sumHeaderNames = ["Year", "Count", "Weighted RCR", "Mean RCR",
         "Average NIH Percentile", "Num in JIF Q1", "Percent in JIF Q1", 
         "Average JIF Quartile", "Average JIF", "Sum JIF",
         "Average JIF Percentile", "Social Media Account Shares",
         "Facebook Posts", "Blog Posts", "Google Plus Posts", "News Articles",
         "Peer Review Site Posts", "Total Social Media Posts", "QNA Posts",
         "Reddit Posts", "Tweets", "Wikiepedia", "Unique Authors", "New Authors"]
+    if trdClassify == 'y':
+        sumHeaderNames = ['TR&D'] + sumHeaderNames
     sumHeader = collections.OrderedDict()
     for info in sumHeaderNames:
         sumHeader[info] = None
@@ -140,7 +152,11 @@ def bibrun():
             minYear = pub["year"]
         if pub["year"] > maxYear:
             maxYear = pub["year"]
-    for trd in [1, 2, 3, 'c', 'n', "Total"]:
+    if trdClassify == 'y':
+        trdList = [1, 2, 3, 'c', 'n', 'Total']
+    else:
+        trdList = ['Total']
+    for trd in trdList:
         for yr in range(minYear, maxYear + 1):
             sumData.append({'TR&D': trd, 'Year': yr, 'Count': 0,
                 'Weighted RCR': 0, 'Mean RCR': 0, 'Average NIH Percentile': 0,
