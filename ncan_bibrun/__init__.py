@@ -81,7 +81,7 @@ def bibrun():
     #Ask whether we want to classify according to TR&D
     while True:
         trdClassify = input("Do you want to classify these articles " +
-            "according to their TR&D (y/n)?")
+            "according to their TR&D (y/n)? ")
         if trdClassify in ['y', 'n']:
             break
 
@@ -178,30 +178,31 @@ def bibrun():
     new = True
     for sumStat in sumData:
         for pub in pubs:
-            authors = pub["authors"].split(", ")
+            if pub["authors"] is not None:
+                authors = pub["authors"].split(", ")
 
-            # Determine whether it's a unique author
-            if pub["year"] == sumStat["Year"] and \
-                (pub["TR&D"] == sumStat["TR&D"] or \
-                sumStat["TR&D"] == "Total"):
-                    sumStat["authors"] += [pubAuthor for pubAuthor in authors if not sameAuthor(pubAuthor, sumStat["authors"])]
+                # Determine whether it's a unique author
+                if pub["year"] == sumStat["Year"] and \
+                    (pub["TR&D"] == sumStat["TR&D"] or \
+                    sumStat["TR&D"] == "Total"):
+                        sumStat["authors"] += [pubAuthor for pubAuthor in authors if not sameAuthor(pubAuthor, sumStat["authors"])]
 
-            # Create a list of all authors for each summary category
-            if (pub["TR&D"] == sumStat["TR&D"] or \
-                sumStat["TR&D"] == 'Total') and \
-                pub["year"] <= sumStat["Year"]:
-                    newAuthors[(sumStat["TR&D"], sumStat["Year"])] += [pubAuthor
-                        for pubAuthor in authors if not sameAuthor(pubAuthor,
-                        newAuthors[(sumStat["TR&D"], sumStat["Year"])])]
+                # Create a list of all authors for each summary category
+                if (pub["TR&D"] == sumStat["TR&D"] or \
+                    sumStat["TR&D"] == 'Total') and \
+                    pub["year"] <= sumStat["Year"]:
+                        newAuthors[(sumStat["TR&D"], sumStat["Year"])] += [pubAuthor
+                            for pubAuthor in authors if not sameAuthor(pubAuthor,
+                            newAuthors[(sumStat["TR&D"], sumStat["Year"])])]
 
-        # Calculate the number of new authors and unique authors
-        if sumStat["Year"] > minYear:
-            for past in range(minYear, sumStat["Year"]):
-                newAuthors[(sumStat["TR&D"], sumStat["Year"])] = [author
-                    for author in newAuthors[(sumStat["TR&D"], sumStat["Year"])]
-                    if author not in newAuthors[(sumStat["TR&D"], past)]]
-            sumStat["New Authors"] = len(newAuthors[(sumStat["TR&D"], sumStat["Year"])])
-        sumStat["Unique Authors"] = len(sumStat["authors"])
+            # Calculate the number of new authors and unique authors
+            if sumStat["Year"] > minYear:
+                for past in range(minYear, sumStat["Year"]):
+                    newAuthors[(sumStat["TR&D"], sumStat["Year"])] = [author
+                        for author in newAuthors[(sumStat["TR&D"], sumStat["Year"])]
+                        if author not in newAuthors[(sumStat["TR&D"], past)]]
+                sumStat["New Authors"] = len(newAuthors[(sumStat["TR&D"], sumStat["Year"])])
+            sumStat["Unique Authors"] = len(sumStat["authors"])
     
     #Determine number of publications per year
     for sumStat in sumData:
@@ -354,66 +355,73 @@ def bibrun():
 
     print("Journal Impact Factor Information Added.")
 
-    #Get Altmetric Data
-    listofinfo = []
-    notFound = False
-    for pmid in pmidList:
-        response = requests.get("https://api.altmetric.com/v1/pmid/" + pmid)
-        if response.status_code == 200:
-            listofinfo.append(response.json())
-        elif response.status_code == 404:
-            notFound = True
-        elif response.status_code != 404:
-            print("Error getting article (may be rate-limited)")
-    if notFound:
-        print("Not all articles on Altmetric. Data will be incomplete.")
+    #Ask whether user wants Altmetric data
+    while True:
+        getAlts = input("Do you want to obtain Altmetric Data (y/n)? ")
+        if getAlts in ['y', 'n']:
+            break
 
-    #Add Altmetric Data
-    for info in listofinfo:
-        info["pmid"] = int(info["pmid"])
-        for pub in pubs:
-            if info["pmid"] == pub["pmid"]:
-                for key in info.keys():
-                    if key[0:5] == "cited":
-                        if isinstance(info[key], str) and info[key].isnumeric():
-                            pub[key] = int(info[key])
-                            pubsHeader.add(key)
-                        elif isinstance(info[key], int) or \
-                            isinstance(info[key], float):
-                                pub[key] = info[key]
+    if getAlts == 'y':
+        #Get Altmetric Data
+        listofinfo = []
+        notFound = False
+        for pmid in pmidList:
+            response = requests.get("https://api.altmetric.com/v1/pmid/" + pmid)
+            if response.status_code == 200:
+                listofinfo.append(response.json())
+            elif response.status_code == 404:
+                notFound = True
+            elif response.status_code != 404:
+                print("Error getting article (may be rate-limited)")
+        if notFound:
+            print("Not all articles on Altmetric. Data will be incomplete.")
+
+        #Add Altmetric Data
+        for info in listofinfo:
+            info["pmid"] = int(info["pmid"])
+            for pub in pubs:
+                if info["pmid"] == pub["pmid"]:
+                    for key in info.keys():
+                        if key[0:5] == "cited":
+                            if isinstance(info[key], str) and info[key].isnumeric():
+                                pub[key] = int(info[key])
                                 pubsHeader.add(key)
+                            elif isinstance(info[key], int) or \
+                                isinstance(info[key], float):
+                                    pub[key] = info[key]
+                                    pubsHeader.add(key)
 
-    #Tally Altmetric Data
-    for sumStat in sumData:
-        for pub in pubs:
-            if pub["year"] == sumStat["Year"] and \
-                (pub["TR&D"] == sumStat["TR&D"] or \
-                sumStat["TR&D"] == "Total"):
-                    for key in pub.keys():
-                        if key == "cited_by_accounts_count":
-                            sumStat["Social Media Account Shares"] += pub["cited_by_accounts_count"]
-                        if key == "cited_by_fbwalls_count":
-                            sumStat["Facebook Posts"] += pub["cited_by_fbwalls_count"]
-                        if key == "cited_by_feeds_count":
-                            sumStat["Blog Posts"] += pub["cited_by_feeds_count"]
-                        if key == "cited_by_gplus_count":
-                            sumStat["Google Plus Posts"] += pub["cited_by_gplus_count"]
-                        if key == "cited_by_msm_count":
-                            sumStat["News Articles"] += pub["cited_by_msm_count"]
-                        if key == "cited_by_peer_review_sites_count":
-                            sumStat["Peer Review Site Posts"] += pub["cited_by_peer_review_sites_count"]
-                        if key == "cited_by_posts_count":
-                            sumStat["Total Social Media Posts"] += pub["cited_by_posts_count"]
-                        if key == "cited_by_qna_count":
-                            sumStat["QNA Posts"] += pub["cited_by_qna_count"]
-                        if key == "cited_by_rdts_count":
-                            sumStat["Reddit Posts"] += pub["cited_by_rdts_count"]
-                        if key == "cited_by_tweeters_count":
-                            sumStat["Tweets"] += pub["cited_by_tweeters_count"]
-                        if key == "cited_by_wikipedia_count":
-                            sumStat["Wikipedia Mentions"] += pub["cited_by_wikipedia_count"]
+        #Tally Altmetric Data
+        for sumStat in sumData:
+            for pub in pubs:
+                if pub["year"] == sumStat["Year"] and \
+                    (pub["TR&D"] == sumStat["TR&D"] or \
+                    sumStat["TR&D"] == "Total"):
+                        for key in pub.keys():
+                            if key == "cited_by_accounts_count":
+                                sumStat["Social Media Account Shares"] += pub["cited_by_accounts_count"]
+                            if key == "cited_by_fbwalls_count":
+                                sumStat["Facebook Posts"] += pub["cited_by_fbwalls_count"]
+                            if key == "cited_by_feeds_count":
+                                sumStat["Blog Posts"] += pub["cited_by_feeds_count"]
+                            if key == "cited_by_gplus_count":
+                                sumStat["Google Plus Posts"] += pub["cited_by_gplus_count"]
+                            if key == "cited_by_msm_count":
+                                sumStat["News Articles"] += pub["cited_by_msm_count"]
+                            if key == "cited_by_peer_review_sites_count":
+                                sumStat["Peer Review Site Posts"] += pub["cited_by_peer_review_sites_count"]
+                            if key == "cited_by_posts_count":
+                                sumStat["Total Social Media Posts"] += pub["cited_by_posts_count"]
+                            if key == "cited_by_qna_count":
+                                sumStat["QNA Posts"] += pub["cited_by_qna_count"]
+                            if key == "cited_by_rdts_count":
+                                sumStat["Reddit Posts"] += pub["cited_by_rdts_count"]
+                            if key == "cited_by_tweeters_count":
+                                sumStat["Tweets"] += pub["cited_by_tweeters_count"]
+                            if key == "cited_by_wikipedia_count":
+                                sumStat["Wikipedia Mentions"] += pub["cited_by_wikipedia_count"]
 
-    print("Altmetric Data Added.")
+        print("Altmetric Data Added.")
 
     #Write NCAN Data.xlsx, start with pubData
     desktop_dir = os.path.join(os.path.expanduser('~'), "Desktop")

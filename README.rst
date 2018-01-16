@@ -61,8 +61,10 @@ Use
 After you have properly installed ``ncan_bibrun`` to your system, you may use it by opening any terminal window and entering ``ncan-bibrun``. As it runs, the script may ask the following:
 
 * The URL of the PubMed search that you wish to perform an analysis on.
+* Whether you would like to classify the publications according to their TR&D.
 * To assign a publication to the appropriate TR&D. Choices include 1, 2, 3, 'c' for Collaborative & Service Project, or 'n' for none of the above.
 * To confirm whether a journal title abbreviation matches the name of the journal.
+* Whether you would like to obtain Altmetric data for each publication (this option is given since obtaining Altmetric data significantly slows down the script and can be rate-limited)
 
 Occassionally, the PubMed Search URL may be too long to copy and paste into your terminal. When this occurs, you can copy and paste the URL into a ``.txt`` file and pipe the URL to the script with the following command: ``cat filename.txt - | ncan-bibrun``.
 
