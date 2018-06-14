@@ -8,9 +8,9 @@ def readme():
         return f.read()
 
 setup(name='ncan_bibrun',
-      version='0.1',
+      version='0.2',
       description='NCAN Bibliometric Assessment',
-      url='https://github.com/Schmill731/NCAN-Bibliometric-Analysis.git',
+      url='http://github.com/Schmill731/NCAN-Bibliometric-Analysis',
       author='Billy Schmitt',
       author_email='williamschmitt@college.harvard.edu',
       license='NCAN',

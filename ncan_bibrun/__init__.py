@@ -424,8 +424,8 @@ def bibrun():
         print("Altmetric Data Added.")
 
     #Write NCAN Data.xlsx, start with pubData
-    desktop_dir = os.path.join(os.path.expanduser('~'), "Desktop")
-    workbook = xlsxwriter.Workbook(desktop_dir + '/NCAN Bibliometric Data.xlsx')
+    file_name = os.path.join(os.path.expanduser('~'), "Desktop", "NCAN Bibliometric Data.xlsx")
+    workbook = xlsxwriter.Workbook(file_name)
     bold = workbook.add_format({'bold': True})
     pubData = workbook.add_worksheet('pubData')
     row = 0
