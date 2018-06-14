@@ -74,3 +74,8 @@ Uninstallation
 --------------
 
 To uninstall the script from your machine, open a terminal window and run ``pip3 uninstall ncan_bibrun``.
+
+Version History
+--------------
+* Version 0.1: Initial Version
+* Version 0.2: Added support for Windows Operating System
